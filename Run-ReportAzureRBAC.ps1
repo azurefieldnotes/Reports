@@ -1,32 +1,60 @@
-﻿#Login-AzureRmAccount 
-#Import-Module azurerm
-#Import-Module ReportHTML
+﻿#Requires –Modules AzureRM
+#Requires –Modules ReportHTML
 
-#$RoleDefinitions = Get-AzureRmRoleDefinition 
+param
+(
+    $LeftLogo,
+    $RightLogo, 
+    $reportPath,
+    $ReportName='AzureRBAC',
+    [switch]$ReloadData
+)
 
- 
-#$AssignedRoles = Get-AzureRmRoleAssignment | group DisplayName 
 
+If ( ! (Get-module AzureRM)) {    
+    Import-Module AzureRM
+} 
 
-$ResourceGroups = Get-AzureRmResourceGroup | select -First 10
-$i=0;$Records = $ResourceGroups.Count
-$RGRoleAssignments = @()
-foreach ($RG in $ResourceGroups ) {
-    Write-Progress -PercentComplete ($i/$Records *100) -Activity "Getting role assignments from Resource Groups"
-    $RGRoleAssignment = '' | select ResourceGroup, RoleAssignment  
-    $RGRoleAssignment.ResourceGroup = $rg.ResourceGroupName
-    $RGRoleAssignment.RoleAssignment  = Get-AzureRmRoleAssignment -ResourceGroupName $RG.ResourceGroupName | select DisplayName, RoleDefinitionName, Scope
-    $RGRoleAssignments += $RGRoleAssignment
-    $I++
+If ( ! (Get-module ReportHTML)) {
+    Import-Module ReportHTML
 }
+
+Test-AzureRmAccountTokenExpiry
+
+if ($ReloadData) {
+    $RoleDefinitions = Get-AzureRmRoleDefinition 
+    $AssignedRoles = Get-AzureRmRoleAssignment 
+    $AzureUsers = $AssignedRoles | select SignInName -Unique
+    $GroupAssignedRoles = $AssignedRoles  | group DisplayName 
+
+    $ResourceGroups = Get-AzureRmResourceGroup 
+    $i=0;$Records = $ResourceGroups.Count
+    $RGRoleAssignments = @()
+    foreach ($RG in $ResourceGroups ) {
+        Write-Progress -PercentComplete ($i/$Records *100) -Activity "Getting role assignments from Resource Groups"
+        $RGRoleAssignment = '' | select ResourceGroup, RoleAssignment  
+        $RGRoleAssignment.ResourceGroup = $rg.ResourceGroupName
+        $RGRoleAssignment.RoleAssignment  = Get-AzureRmRoleAssignment -ResourceGroupName $RG.ResourceGroupName | select DisplayName, RoleDefinitionName, Scope
+        $RGRoleAssignments += $RGRoleAssignment
+        $I++
+    }
+
+    $UserAssignedRBAC = @()
+    foreach ($AzureUser in ($AzureUsers | ? {$_.SignInName -ne $null}) ) {
+        $UserAssignedRBAC  += Get-AzureRmRoleAssignment -SignInName $AzureUser.SignInName | Select DisplayName, RoleDefinitionName, Scope
+        #GROUP... $UserAssignedRBAC  += Get-AzureRmRoleAssignment -SignInName $AzureUser.SignInName -ExpandPrincipalGroups | FL DisplayName, RoleDefinitionName, Scope
+    }
+    $GroupedUserAssignedRBAC = $UserAssignedRBAC | group DisplayName
+}
+
+
 
 
 $rpt = @()
 $rpt += Get-HTMLOpenPage
-    $rpt += Get-HTMLContentOpen -HeaderText RoleDefinitions -IsHidden
-        
+    $rpt += Get-HTMLContentOpen -HeaderText RoleDefinitions -IsHidden    
         #$Roles = Get-HTMLAnchorLink -AnchorName $_.name.replace(' ','') -AnchorText $_.name
-        $rpt += Get-HTMLContentTable ($RoleDefinitions )
+        $rpt += Get-HTMLContentTable ($RoleDefinitions | select Name, Description, IsCustom)
     $rpt += Get-HTMLContentClose
     $rpt += Get-HTMLContentOpen -HeaderText ("RBAC Role Definitions") -BackgroundShade 2 -IsHidden
      
@@ -53,11 +81,18 @@ $rpt += Get-HTMLOpenPage
         $rpt += get-htmlcontentclose
     }
     $rpt += get-htmlcontentclose
+
+    $rpt +=  Get-HTMLContentOpen -HeaderText "User Assigned Roles" -BackgroundShade 1 -IsHidden
+        $rpt += get-htmlcontenttable ($UserAssignedRBAC) -GroupBy    displayname
+    $rpt += get-htmlcontentclose
 $rpt += get-htmlclosepage
 
-Save-HTMLReport -ReportContent $rpt -ShowReport
 
+if ([string]::IsNullOrEmpty($reportPath)) {
+    Save-HTMLReport -ReportContent $rpt -ReportPath $ReportPath -ReportName $ReportName -ShowReport 
+}
+else
+{
+    Save-HTMLReport -ReportContent $rpt -ReportName $ReportName -ShowReport 
+}
 
-#Get-AzureRmRoleAssignment -SignInName sameert@aaddemo.com | FL DisplayName, RoleDefinitionName, Scope
-
-#Get-AzureRmRoleAssignment -SignInName sameert@aaddemo.com -ExpandPrincipalGroups | FL DisplayName, RoleDefinitionName, Scope
