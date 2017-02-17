@@ -1,6 +1,6 @@
 ﻿<#PSScriptInfo
 
-.VERSION 1.0.0.0
+.VERSION 1.0.0.4
 
 .GUID 2b32a6b1-3ba3-4b6c-a4dd-2c3f09f2f835
 
@@ -18,7 +18,7 @@
 
 .ICONURI 
 
-.EXTERNALMODULEDEPENDENCIES ReportHTML 
+.EXTERNALMODULEDEPENDENCIES 
 
 .REQUIREDSCRIPTS 
 
@@ -37,22 +37,40 @@
 
 #Requires –Modules AzureRM
 #Requires –Modules ReportHTML
-#Requires -Modules AzureRMHelpers
+#Requires -Modules ReportHTMLHelpers
 
-param
+[CmdletBinding(DefaultParameterSetName='ReportParameters')]
+param 
 (
+    [Parameter(Mandatory=$false,ParameterSetName='ReportParameters')]
+    [string]
     $LeftLogo ='https://azurefieldnotesblog.blob.core.windows.net/wp-content/2017/02/YourLogoHere.png',
+    [Parameter(Mandatory=$false,ParameterSetName='ReportParameters')]
+    [string]
     $RightLogo ='https://azurefieldnotesblog.blob.core.windows.net/wp-content/2017/02/ReportHTML.png', 
+    [Parameter(Mandatory=$false,ParameterSetName='ReportParameters')]
+    [string]
     $reportPath,
+    [Parameter(Mandatory=$false,ParameterSetName='ReportParameters')]
+    [string]
     $ReportName='AzureRBAC',
-    [switch]$UseExistingData
+    [Parameter(Mandatory=$false,ParameterSetName='ReportParameters')]
+    [Parameter(Mandatory=$false,ParameterSetName='ReportParametersObject')]
+    [switch]
+    $UseExistingData,
+    [Parameter(Mandatory=$false,ParameterSetName='ReportParametersObject')]
+    [PSObject]
+    $ReportParameterObject
 )
-
-
 
 Test-AzureRmAccountTokenExpiry
 
-if ($UseExistingData) {
+if ($UseExistingData) 
+{
+    Write-Warning "Reusing the data, helpful when developing the report"
+} 
+else 
+{
     $RoleDefinitions = Get-AzureRmRoleDefinition 
     $AssignedRoles = Get-AzureRmRoleAssignment 
     $AzureUsers = $AssignedRoles | select SignInName -Unique
