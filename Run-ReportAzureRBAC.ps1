@@ -1,21 +1,58 @@
-﻿#Requires –Modules AzureRM
+﻿<#PSScriptInfo
+
+.VERSION 1.0.0.0
+
+.GUID 2b32a6b1-3ba3-4b6c-a4dd-2c3f09f2f835
+
+.AUTHOR matt.quickenden
+
+.COMPANYNAME Avanade
+
+.COPYRIGHT 
+
+.TAGS Report HTML Azure RBAC
+
+.LICENSEURI 
+
+.PROJECTURI http://www.azurefieldnotes.com/
+
+.ICONURI 
+
+.EXTERNALMODULEDEPENDENCIES ReportHTML 
+
+.REQUIREDSCRIPTS 
+
+.EXTERNALSCRIPTDEPENDENCIES 
+.RELEASENOTES
+
+
+#>
+
+<# 
+
+.DESCRIPTION 
+ A report to show RBAC from Azure.  This is a prototype.  
+
+#> 
+
+#Requires –Modules AzureRM
 #Requires –Modules ReportHTML
 #Requires -Modules AzureRMHelpers
 
 param
 (
-    $LeftLogo,
-    $RightLogo, 
+    $LeftLogo ='https://azurefieldnotesblog.blob.core.windows.net/wp-content/2017/02/YourLogoHere.png',
+    $RightLogo ='https://azurefieldnotesblog.blob.core.windows.net/wp-content/2017/02/ReportHTML.png', 
     $reportPath,
     $ReportName='AzureRBAC',
-    [switch]$ReloadData
+    [switch]$UseExistingData
 )
 
 
 
 Test-AzureRmAccountTokenExpiry
 
-if ($ReloadData) {
+if ($UseExistingData) {
     $RoleDefinitions = Get-AzureRmRoleDefinition 
     $AssignedRoles = Get-AzureRmRoleAssignment 
     $AzureUsers = $AssignedRoles | select SignInName -Unique
@@ -42,10 +79,8 @@ if ($ReloadData) {
 }
 
 
-
-
 $rpt = @()
-$rpt += Get-HTMLOpenPage
+$rpt += Get-HTMLOpenPage -LeftLogoString $LeftLogo  -RightLogoString $RightLogo
     $rpt += Get-HTMLContentOpen -HeaderText RoleDefinitions -IsHidden    
         #$Roles = Get-HTMLAnchorLink -AnchorName $_.name.replace(' ','') -AnchorText $_.name
         $rpt += Get-HTMLContentTable ($RoleDefinitions | select Name, Description, IsCustom)
@@ -82,11 +117,4 @@ $rpt += Get-HTMLOpenPage
 $rpt += get-htmlclosepage
 
 
-if ([string]::IsNullOrEmpty($reportPath)) {
-    Save-HTMLReport -ReportContent $rpt -ReportPath $ReportPath -ReportName $ReportName -ShowReport 
-}
-else
-{
-    Save-HTMLReport -ReportContent $rpt -ReportName $ReportName -ShowReport 
-}
-
+Save-HTMLReport -ReportContent $rpt -ReportPath $ReportPath -ReportName $ReportName -ShowReport 
