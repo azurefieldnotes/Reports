@@ -1,5 +1,6 @@
 ﻿#Requires –Modules AzureRM
 #Requires –Modules ReportHTML
+#Requires -Modules AzureRMHelpers
 
 param
 (
@@ -11,13 +12,6 @@ param
 )
 
 
-If ( ! (Get-module AzureRM)) {    
-    Import-Module AzureRM
-} 
-
-If ( ! (Get-module ReportHTML)) {
-    Import-Module ReportHTML
-}
 
 Test-AzureRmAccountTokenExpiry
 
