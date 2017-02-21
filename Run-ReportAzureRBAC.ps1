@@ -1,24 +1,24 @@
 ﻿<#PSScriptInfo
 
-.VERSION 1.0.0.4
+.VERSION 1.0.0.5
 
 .GUID 2b32a6b1-3ba3-4b6c-a4dd-2c3f09f2f835
 
-.AUTHOR matt.quickenden
+.AUTHOR Matthew Quickenden
 
-.COMPANYNAME Avanade
+.COMPANYNAME Avanade / ACE
 
-.COPYRIGHT 
+.COPYRIGHT meh
 
 .TAGS Report HTML Azure RBAC
 
-.LICENSEURI 
+.LICENSEURI https://github.com/azurefieldnotes/Reports
 
-.PROJECTURI http://www.azurefieldnotes.com/
+.PROJECTURI https://github.com/azurefieldnotes/Reports
 
-.ICONURI 
+.ICONURI https://azurefieldnotesblog.blob.core.windows.net/wp-content/2017/02/RBAC.jpg
 
-.EXTERNALMODULEDEPENDENCIES 
+.EXTERNALMODULEDEPENDENCIES AzureRM
 
 .REQUIREDSCRIPTS 
 
@@ -32,7 +32,6 @@
 
 .DESCRIPTION 
  A report to show RBAC from Azure.  This is a prototype.  
-
 #> 
 
 #Requires –Modules AzureRM
@@ -98,7 +97,7 @@ else
 
 
 $rpt = @()
-$rpt += Get-HTMLOpenPage -LeftLogoString $LeftLogo  -RightLogoString $RightLogo
+$rpt += Get-HTMLOpenPage -LeftLogoString $LeftLogo  -RightLogoString $RightLogo -TitleText $ReportName
     $rpt += Get-HTMLContentOpen -HeaderText RoleDefinitions -IsHidden    
         #$Roles = Get-HTMLAnchorLink -AnchorName $_.name.replace(' ','') -AnchorText $_.name
         $rpt += Get-HTMLContentTable ($RoleDefinitions | select Name, Description, IsCustom)
